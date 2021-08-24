@@ -158,12 +158,10 @@ def _create_validation_data_loader(img_path, batch_size, img_size, n_cpu):
         collate_fn=dataset.collate_fn)
     return dataloader
 
-
-def run():
-    print_environment_info()
+def arg_parser_test():
     parser = argparse.ArgumentParser(description="Evaluate validation data.")
-    parser.add_argument("-m", "--model", type=str, default="config/yolov3.cfg", help="Path to model definition file (.cfg)")
-    parser.add_argument("-w", "--weights", type=str, default="weights/yolov3.weights", help="Path to weights or checkpoint file (.weights or .pth)")
+    # parser.add_argument("-m", "--model", type=str, default="config/yolov3.cfg", help="Path to model definition file (.cfg)")
+    # parser.add_argument("-w", "--weights", type=str, default="weights/yolov3.weights", help="Path to weights or checkpoint file (.weights or .pth)")
     parser.add_argument("-d", "--data", type=str, default="config/coco.data", help="Path to data config file (.data)")
     parser.add_argument("-b", "--batch_size", type=int, default=8, help="Size of each image batch")
     parser.add_argument("-v", "--verbose", action='store_true', help="Makes the validation more verbose")
@@ -174,24 +172,30 @@ def run():
     parser.add_argument("--nms_thres", type=float, default=0.4, help="IOU threshold for non-maximum suppression")
     args = parser.parse_args()
     print(f"Command line arguments: {args}")
+    return args
+
+def run(model="config/yolov3.cfg", weights="weights/yolov3.weights",
+    batch_size = 8,data= "config/coco.data",img_size= 416, n_cpu=8, 
+    iou_thres=0.5,conf_thres=0.01, nms_thres=0.4):
+    # print_environment_info()
 
     # Load configuration from data file
-    data_config = parse_data_config(args.data)
+    data_config = parse_data_config(data)
     # Path to file containing all images for validation
     valid_path = data_config["valid"]
     class_names = load_classes(data_config["names"])  # List of class names
 
     precision, recall, AP, f1, ap_class = evaluate_model_file(
-        args.model,
-        args.weights,
+        model,
+        weights,
         valid_path,
         class_names,
-        batch_size=args.batch_size,
-        img_size=args.img_size,
-        n_cpu=args.n_cpu,
-        iou_thres=args.iou_thres,
-        conf_thres=args.conf_thres,
-        nms_thres=args.nms_thres,
+        batch_size=batch_size,
+        img_size=img_size,
+        n_cpu=n_cpu,
+        iou_thres=iou_thres,
+        conf_thres=conf_thres,
+        nms_thres=nms_thres,
         verbose=True)
 
 
