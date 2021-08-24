@@ -1,3 +1,12 @@
+# Compression of YOLO v3 network.
+Based on : https://arxiv.org/pdf/1506.02626.pdf
+<br>
+Referred Repositories:
+<ul>
+  <li> https://github.com/mightydeveloper/Deep-Compression-PyTorch </li>
+  <li> https://github.com/jack-willturner/deep-compression </li>
+ </ul>
+
 # PyTorch-YOLOv3
 A minimal PyTorch implementation of YOLOv3, with support for training, inference and evaluation.
 
