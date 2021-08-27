@@ -103,7 +103,8 @@ def run(model="config/yolov3.cfg",data="config/coco.data",
     # ############
 
     model = load_model(model, pretrained_weights)
-
+    model= torch.nn.DataParallel(model,device_ids = [0, 3])
+    model.to(device)
     # Print model
     if verbose:
         summary(model, input_size=(3, model.hyperparams['height'], model.hyperparams['height']))
