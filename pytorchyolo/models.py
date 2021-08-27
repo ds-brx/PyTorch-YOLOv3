@@ -9,9 +9,9 @@ import numpy as np
 
 from pytorchyolo.utils.parse_config import parse_model_config
 from pytorchyolo.utils.utils import weights_init_normal
+from pruning_modules import Conv_mask
 
-
-def create_modules(module_defs):
+def create_modules(module_defs, pruning):
     """
     Constructs module list of layer blocks from module configuration in module_defs
     """
@@ -38,30 +38,44 @@ def create_modules(module_defs):
     module_list = nn.ModuleList()
     for module_i, module_def in enumerate(module_defs):
         modules = nn.Sequential()
-
         if module_def["type"] == "convolutional":
             bn = int(module_def["batch_normalize"])
             filters = int(module_def["filters"])
             kernel_size = int(module_def["size"])
             pad = (kernel_size - 1) // 2
-            modules.add_module(
-                f"conv_{module_i}",
-                nn.Conv2d(
-                    in_channels=output_filters[-1],
-                    out_channels=filters,
+            
+            if not pruning:
+                modules.add_module(
+                    f"conv_{module_i}",
+                    nn.Conv2d(
+                        in_channels=output_filters[-1],
+                        out_channels=filters,
+                        kernel_size=kernel_size,
+                        stride=int(module_def["stride"]),
+                        padding=pad,
+                        bias=not bn,
+                    ),
+                )
+            
+            else:
+                modules.add_module(f"conv_mask_{module_i}",
+                Conv_mask(
+                    output_filters[-1],
+                    filters,
                     kernel_size=kernel_size,
                     stride=int(module_def["stride"]),
                     padding=pad,
                     bias=not bn,
-                ),
-            )
+                    ),
+                )
             if bn:
                 modules.add_module(f"batch_norm_{module_i}",
-                                   nn.BatchNorm2d(filters, momentum=0.1, eps=1e-5))
+                                nn.BatchNorm2d(filters, momentum=0.1, eps=1e-5))
             if module_def["activation"] == "leaky":
                 modules.add_module(f"leaky_{module_i}", nn.LeakyReLU(0.1))
             if module_def["activation"] == "mish":
                 modules.add_module(f"mish_{module_i}", Mish())
+            
 
         elif module_def["type"] == "maxpool":
             kernel_size = int(module_def["size"])
@@ -167,10 +181,10 @@ class YOLOLayer(nn.Module):
 class Darknet(nn.Module):
     """YOLOv3 object detection model"""
 
-    def __init__(self, config_path):
+    def __init__(self, config_path, pruning=False):
         super(Darknet, self).__init__()
         self.module_defs = parse_model_config(config_path)
-        self.hyperparams, self.module_list = create_modules(self.module_defs)
+        self.hyperparams, self.module_list = create_modules(self.module_defs, pruning)
         self.yolo_layers = [layer[0]
                             for layer in self.module_list if isinstance(layer[0], YOLOLayer)]
         self.seen = 0
@@ -289,9 +303,25 @@ class Darknet(nn.Module):
                 conv_layer.weight.data.cpu().numpy().tofile(fp)
 
         fp.close()
+    def prune_by_std(self, checkpoint_path, s=0.25):
+        """
+        Note that `s` is a quality parameter / sensitivity value according to the paper.
+        According to Song Han's previous paper (Learning both Weights and Connections for Efficient Neural Networks),
+        'The pruning threshold is chosen as a quality parameter multiplied by the standard deviation of a layer’s weights'
+
+        I tried multiple values and empirically, 0.25 matches the paper's compression rate and number of parameters.
+        Note : In the paper, the authors used different sensitivity values for different layers.
+        """
+        for name, module in self.named_modules():
+            if 'mask' in name:
+                threshold = np.std(module.weight.data.cpu().numpy()) * s
+                print(f'Pruning with threshold : {threshold} for layer {name}')
+                module.prune(threshold)
+        torch.save(self.state_dict(), checkpoint_path)
+        return checkpoint_path
 
 
-def load_model(model_path, weights_path=None):
+def load_model(model_path, weights_path=None,pruning=True):
     """Loads the yolo model from file.
 
     :param model_path: Path to model definition file (.cfg)
@@ -303,7 +333,7 @@ def load_model(model_path, weights_path=None):
     """
     device = torch.device("cuda" if torch.cuda.is_available()
                           else "cpu")  # Select device for inference
-    model = Darknet(model_path).to(device)
+    model = Darknet(model_path,pruning).to(device)
 
     model.apply(weights_init_normal)
 
