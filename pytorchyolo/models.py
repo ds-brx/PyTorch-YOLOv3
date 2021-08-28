@@ -43,31 +43,15 @@ def create_modules(module_defs, pruning):
             filters = int(module_def["filters"])
             kernel_size = int(module_def["size"])
             pad = (kernel_size - 1) // 2
-            
-            if not pruning:
-                modules.add_module(
-                    f"conv_{module_i}",
-                    nn.Conv2d(
-                        in_channels=output_filters[-1],
-                        out_channels=filters,
-                        kernel_size=kernel_size,
-                        stride=int(module_def["stride"]),
-                        padding=pad,
-                        bias=not bn,
-                    ),
+            conv_mask = Conv_mask(
+                output_filters[-1],
+                filters,
+                kernel_size=kernel_size,
+                stride=int(module_def["stride"]),
+                padding=pad,
+                bias=not bn,
                 )
-            
-            else:
-                modules.add_module(f"conv_mask_{module_i}",
-                Conv_mask(
-                    output_filters[-1],
-                    filters,
-                    kernel_size=kernel_size,
-                    stride=int(module_def["stride"]),
-                    padding=pad,
-                    bias=not bn,
-                    ),
-                )
+            modules.add_module(f"conv_mask_{module_i}",conv_mask)
             if bn:
                 modules.add_module(f"batch_norm_{module_i}",
                                 nn.BatchNorm2d(filters, momentum=0.1, eps=1e-5))
@@ -181,7 +165,7 @@ class YOLOLayer(nn.Module):
 class Darknet(nn.Module):
     """YOLOv3 object detection model"""
 
-    def __init__(self, config_path, pruning=False):
+    def __init__(self, config_path, pruning=True):
         super(Darknet, self).__init__()
         self.module_defs = parse_model_config(config_path)
         self.hyperparams, self.module_list = create_modules(self.module_defs, pruning)
@@ -312,13 +296,16 @@ class Darknet(nn.Module):
         I tried multiple values and empirically, 0.25 matches the paper's compression rate and number of parameters.
         Note : In the paper, the authors used different sensitivity values for different layers.
         """
+        
         for name, module in self.named_modules():
-            if 'mask' in name:
-                threshold = np.std(module.weight.data.cpu().numpy()) * s
+            if type(module).__name__ == "Conv_mask":
+                # print("Mean of Layer: ",np.mean(module.weight.data.cpu().numpy()))
+                threshold = np.mean(module.weight.data.cpu().numpy()) * s
                 print(f'Pruning with threshold : {threshold} for layer {name}')
                 module.prune(threshold)
         torch.save(self.state_dict(), checkpoint_path)
         return checkpoint_path
+
 
 
 def load_model(model_path, weights_path=None,pruning=True):
