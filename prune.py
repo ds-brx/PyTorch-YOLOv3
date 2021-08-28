@@ -11,7 +11,7 @@ import argparse
 
 parser = argparse.ArgumentParser(description="Get threshold.")
 parser.add_argument("-sen", type=float, default=0.25, help="Sensitivity for pruning.")
-parser.add_Argument("-train", type = bool, default = False, help = "Retrain Model.")
+parser.add_argument("-train", type = bool, default = False, help = "Retrain Model.")
 args = parser.parse_args()
 
 print("Loading Model\n")
