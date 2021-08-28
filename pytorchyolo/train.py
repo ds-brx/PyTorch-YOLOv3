@@ -76,41 +76,35 @@ def arg_parser_train():
     print(f"Command line arguments: {args}")
     return args
 
-def run(model="config/yolov3.cfg",data="config/coco.data", 
+def run(model,data="config/coco.data", 
     epochs=300, verbose=True, n_cpu=8,pretrained_weights=None,
     checkpoint_interval=1,evaluation_interval=1,multiscale_training=True,
     iou_thres=0.5, conf_thres=0.1, nms_thres=0.5,logdir="logs",seed=-1):
-    # print_environment_info()
-
+    print_environment_info()
     if seed != -1:
         provide_determinism(seed)
 
     logger = Logger(logdir)  # Tensorboard logger
-
     # Create output directories if missing
     os.makedirs("output", exist_ok=True)
     os.makedirs("checkpoints", exist_ok=True)
-
     # Get data configuration
     data_config = parse_data_config(data)
     train_path = data_config["train"]
     valid_path = data_config["valid"]
     class_names = load_classes(data_config["names"])
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
     # ############
     # Create model
     # ############
-
-    model = load_model(model, pretrained_weights)
-    model= torch.nn.DataParallel(model,device_ids = [0, 3])
+    if device == "cuda":
+        model= torch.nn.DataParallel(model,device_ids = [0, 3])
     model.to(device)
     # Print model
     if verbose:
         summary(model, input_size=(3, model.hyperparams['height'], model.hyperparams['height']))
 
     mini_batch_size = model.hyperparams['batch'] // model.hyperparams['subdivisions']
-
     # #################
     # Create Dataloader
     # #################
@@ -133,7 +127,6 @@ def run(model="config/yolov3.cfg",data="config/coco.data",
     # ################
     # Create optimizer
     # ################
-
     params = [p for p in model.parameters() if p.requires_grad]
 
     if (model.hyperparams['optimizer'] in [None, "adam"]):
