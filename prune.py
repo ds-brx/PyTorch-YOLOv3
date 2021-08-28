@@ -11,6 +11,7 @@ import argparse
 
 parser = argparse.ArgumentParser(description="Get threshold.")
 parser.add_argument("-sen", type=float, default=0.25, help="Sensitivity for pruning.")
+parser.add_Argument("-train", type = bool, default = False, help = "Retrain Model.")
 args = parser.parse_args()
 
 print("Loading Model\n")
@@ -28,9 +29,10 @@ checkpoint_path = model.prune_by_std(checkpoint_path= checkpoint_path,s = args.s
 print_nonzeros(model)
 test.run(model =model,weights=checkpoint_path)
 
-print("Pruned and Retrained and Test Outcome\n")
-model, checkpoint_path = train.run(model=model,pretrained_weights= checkpoint_path)
-print_nonzeros(model)
-test.run(model=model,weights =checkpoint_path)
+if (args.train==True):
+  print("Pruned and Retrained and Test Outcome\n")
+  model, checkpoint_path = train.run(model=model,pretrained_weights= checkpoint_path)
+  print_nonzeros(model)
+  test.run(model=model,weights =checkpoint_path)
 
 
