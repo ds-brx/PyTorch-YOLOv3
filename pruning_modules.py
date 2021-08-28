@@ -2,67 +2,6 @@ import torch
 import torch.nn as nn
 import numpy as np
 
-# class PruningModule(nn.Module):
-#     def prune_by_percentile(self, q=5.0, **kwargs):
-#         """
-#         Note:
-#              The pruning percentile is based on all layer's parameters concatenated
-#         Args:
-#             q (float): percentile in float
-#             **kwargs: may contain `cuda`
-#         """
-#         # Calculate percentile value
-#         alive_parameters = []
-#         for name, p in self.named_parameters():
-#             # We do not prune bias term
-#             if 'bias' in name or 'mask' in name:
-#                 continue
-#             tensor = p.data.cpu().numpy()
-#             alive = tensor[np.nonzero(tensor)] # flattened array of nonzero values
-#             alive_parameters.append(alive)
-
-#         all_alives = np.concatenate(alive_parameters)
-#         percentile_value = np.percentile(abs(all_alives), q)
-#         print(f'Pruning with threshold : {percentile_value}')
-    
-#     def prune_by_std(self, checkpoint_path, s=0.25):
-#         """
-#         Note that `s` is a quality parameter / sensitivity value according to the paper.
-#         According to Song Han's previous paper (Learning both Weights and Connections for Efficient Neural Networks),
-#         'The pruning threshold is chosen as a quality parameter multiplied by the standard deviation of a layer’s weights'
-
-#         I tried multiple values and empirically, 0.25 matches the paper's compression rate and number of parameters.
-#         Note : In the paper, the authors used different sensitivity values for different layers.
-#         """
-#         for name, module in self.named_modules():
-#             if 'Conv' in name:
-#                 threshold = np.std(module.weight.data.cpu().numpy()) * s
-#                 print(f'Pruning with threshold : {threshold} for layer {name}')
-#                 module.prune(threshold)
-#         torch.save(self.state_dict(), checkpoint_path)
-#         return checkpoint_path
-
-
-
-class UnstructuredMask:
-    def __init__(self, in_planes, planes, kernel_size, stride, padding, bias=None):
-        self.masking = nn.Conv2d(
-            in_planes,
-            planes,
-            kernel_size=kernel_size,
-            stride=stride,
-            padding=padding,
-            bias=False,
-        )
-        self.masking.weight.data = torch.ones(self.masking.weight.size())
-
-    def apply(self, conv):
-        conv.weight.data = torch.mul(conv.weight, self.masking.weight)
-    def get_weights_mask(self):
-        return self.masking.weight.data.cpu().numpy()
-    def assign_new_mask(self, mask_dev, new_mask):
-        self.masking.data = torch.from_numpy(new_mask).to(mask_dev)
-
 
 class Conv_mask(nn.Module):
     def __init__(
@@ -75,8 +14,15 @@ class Conv_mask(nn.Module):
         bias=False,
     ):
         super(Conv_mask, self).__init__()
-        UnstructuredMask.__init__(self, in_planes, planes, kernel_size, stride, padding, bias=None)
         self.conv = nn.Conv2d(
+            in_planes,
+            planes,
+            kernel_size=kernel_size,
+            stride=stride,
+            padding=padding,
+            bias=bias,
+        )
+        self.mask = nn.Conv2d(
             in_planes,
             planes,
             kernel_size=kernel_size,
@@ -86,33 +32,28 @@ class Conv_mask(nn.Module):
         )
         self.weight = self.conv.weight
         self.bias = self.conv.bias
-        self.mask = UnstructuredMask(
-            in_planes, planes, kernel_size, stride, padding, bias
-        )
+        self.device = self.conv.weight.device
+        self.mask.weight.data = torch.ones(self.mask.weight.size())
+         
 
     def forward(self, x):
-        self.mask.apply(self.conv)
-
+        self.weight.data = torch.mul(self.weight, self.mask.weight)
         return self.conv(x)
 
     def prune(self, threshold):
-        weight_dev = self.conv.weight.device
-        mask_dev = self.mask.device
-        # Convert Tensors to numpy and calculate
+        weight_dev = self.device
+        mask_dev = self.device
         tensor = self.weight.data.cpu().numpy()
-        mask = self.get_weights_mask()
-        new_mask = np.where(abs(tensor) < threshold, 0, mask)
-        # Apply new weight and mask
-        self.conv.weight.data = torch.from_numpy(tensor * new_mask).to(weight_dev)
-        self.assign_new_mask(mask_dev, new_mask)
+        mask = self.mask.weight.data.cpu().numpy()
+        new_mask = np.where(tensor < threshold, 0, mask)
+        self.weight.data = torch.from_numpy(tensor * new_mask).to(weight_dev)
+        self.mask.weight.data = torch.from_numpy(new_mask).to(mask_dev)
         
 
 
 def print_nonzeros(model):
     nonzero = total = 0
     for name, p in model.named_parameters():
-        if 'mask' in name:
-            continue
         tensor = p.data.cpu().numpy()
         nz_count = np.count_nonzero(tensor)
         total_params = np.prod(tensor.shape)
