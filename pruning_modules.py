@@ -45,7 +45,7 @@ class Conv_mask(nn.Module):
         mask_dev = self.device
         tensor = self.weight.data.cpu().numpy()
         mask = self.mask.weight.data.cpu().numpy()
-        new_mask = np.where(tensor < threshold, 0, mask)
+        new_mask = np.where(abs(tensor) < threshold, 0, mask)
         self.weight.data = torch.from_numpy(tensor * new_mask).to(weight_dev)
         self.mask.weight.data = torch.from_numpy(new_mask).to(mask_dev)
         
