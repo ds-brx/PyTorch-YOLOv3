@@ -12,7 +12,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Get threshold.")
     parser.add_argument("--sen", type=float, default=0.25, help="Sensitivity for pruning.")
     parser.add_argument("--train", type = bool, default = False, help = "Retrain Model.")
-    parser.add_argument("--prune", type = bool, default = True, help = "Prune Model.")
+    parser.add_argument("--prune", type = bool, default = False, help = "Prune Model.")
 
     args = parser.parse_args()
 
