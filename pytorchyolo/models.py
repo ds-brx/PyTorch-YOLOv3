@@ -300,7 +300,7 @@ class Darknet(nn.Module):
         for name, module in self.named_modules():
             if type(module).__name__ == "Conv_mask":
                 # print("Mean of Layer: ",np.mean(module.weight.data.cpu().numpy()))
-                threshold = np.mean(module.weight.data.cpu().numpy()) * s
+                threshold = np.std(module.weight.data.cpu().numpy()) * s
                 print(f'Pruning with threshold : {threshold} for layer {name}')
                 module.prune(threshold)
         torch.save(self.state_dict(), checkpoint_path)
