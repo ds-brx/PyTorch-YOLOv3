@@ -111,13 +111,13 @@ def _evaluate(model, dataloader, class_names, img_size, iou_thres, conf_thres, n
         # Rescale target
         targets[:, 2:] = xywh2xyxy(targets[:, 2:])
         targets[:, 2:] *= img_size
-        print("Target: ", targets.size())
+        print("Target: ", len(targets))
         imgs = Variable(imgs.type(Tensor), requires_grad=False)
 
         with torch.no_grad():
             outputs = model(imgs)
             outputs = non_max_suppression(outputs, conf_thres=conf_thres, iou_thres=nms_thres)
-            print("Output: ", outputs.size())
+            print("Output: ", len(outputs))
         sample_metrics += get_batch_statistics(outputs, targets, iou_threshold=iou_thres)
 
     if len(sample_metrics) == 0:  # No detections over whole validation set.
