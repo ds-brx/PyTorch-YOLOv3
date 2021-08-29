@@ -43,15 +43,28 @@ def create_modules(module_defs, pruning):
             filters = int(module_def["filters"])
             kernel_size = int(module_def["size"])
             pad = (kernel_size - 1) // 2
-            conv_mask = Conv_mask(
-                output_filters[-1],
-                filters,
-                kernel_size=kernel_size,
-                stride=int(module_def["stride"]),
-                padding=pad,
-                bias=not bn,
-                )
-            modules.add_module(f"conv_mask_{module_i}",conv_mask)
+            if (pruning==True):
+                conv_mask = Conv_mask(
+                    output_filters[-1],
+                    filters,
+                    kernel_size=kernel_size,
+                    stride=int(module_def["stride"]),
+                    padding=pad,
+                    bias=not bn,
+                    )
+                modules.add_module(f"conv_mask_{module_i}",conv_mask)
+            else:
+                modules.add_module(
+                f"conv_{module_i}",
+                nn.Conv2d(
+                    in_channels=output_filters[-1],
+                    out_channels=filters,
+                    kernel_size=kernel_size,
+                    stride=int(module_def["stride"]),
+                    padding=pad,
+                    bias=not bn,
+                ),
+            )
             if bn:
                 modules.add_module(f"batch_norm_{module_i}",
                                 nn.BatchNorm2d(filters, momentum=0.1, eps=1e-5))
