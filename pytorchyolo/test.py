@@ -96,6 +96,9 @@ def _evaluate(model, dataloader, class_names, img_size, iou_thres, conf_thres, n
     :type verbose: bool
     :return: Returns precision, recall, AP, f1, ap_class
     """
+    if torch.cuda.is_available():
+      model.cuda()
+      
     model.eval()  # Set model to evaluation mode
 
     Tensor = torch.cuda.FloatTensor if torch.cuda.is_available() else torch.FloatTensor
