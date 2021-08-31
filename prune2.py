@@ -39,7 +39,7 @@ if __name__ == '__main__':
 
     print_nonzeros(model)
     test.run(model=model)
-    if args.weight_share == True
+    if args.weight_share == True:
         apply_weight_sharing(model)
     model_path = "new_model.pth"
     torch.save(model.state_dict(), model_path)
