@@ -12,6 +12,7 @@ if __name__ == '__main__':
     parser.add_argument("-p", "--prune", type=bool, default=False, help="Prune model.")
     parser.add_argument("-s", "--sen", type = float, default = 0, help = "Add sensitivty.")
     parser.add_argument("-o", "--operation", type = str, default = "mean", help ="Operation to prune.")
+    parser.add_argument("-w", "--weight_share", type = bool, default = True, help = "Share Weights.")
     args = parser.parse_args()
     data = "config/coco.data"
     model = "config/yolov3.cfg"
@@ -36,5 +37,7 @@ if __name__ == '__main__':
 
     print_nonzeros(model)
     test.run(model=model)
+    if args.weight_share == True
+        apply_weight_sharing(model)
     model_path = "new_model.pth"
     torch.save(model.state_dict(), model_path)
