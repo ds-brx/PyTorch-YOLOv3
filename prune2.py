@@ -7,6 +7,8 @@ from pruning_modules import print_nonzeros
 from pytorchyolo.utils.parse_config import parse_data_config
 from pytorchyolo.models import load_model
 import argparse
+from weights_share import apply_weight_sharing
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Prune Model.")
     parser.add_argument("-p", "--prune", type=bool, default=False, help="Prune model.")
