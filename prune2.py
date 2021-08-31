@@ -8,13 +8,11 @@ from pytorchyolo.utils.parse_config import parse_data_config
 from pytorchyolo.models import load_model
 import argparse
 from weights_share import apply_weight_sharing
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Prune Model.")
     parser.add_argument("-p", "--prune", type=bool, default=False, help="Prune model.")
     parser.add_argument("-s", "--sen", type = float, default = 0, help = "Add sensitivty.")
     parser.add_argument("-o", "--operation", type = str, default = "mean", help ="Operation to prune.")
-    parser.add_argument("-w", "--weight_share", type = bool, default = True, help = "Share Weights.")
     args = parser.parse_args()
     data = "config/coco.data"
     model = "config/yolov3.cfg"
@@ -35,11 +33,15 @@ if __name__ == '__main__':
                 threshold = abs(args.sen*module_std)
             new_weights = np.where(abs(weights) < threshold,0,weights)
             module.weight.data = torch.from_numpy(new_weights)
-            print("Weights: {}".format(module.weight.data))
+            # print("Weights: {}".format(module.weight.data))
 
     print_nonzeros(model)
     test.run(model=model)
-    if args.weight_share == True:
-        apply_weight_sharing(model)
+    print("Sharing Weights")
+    apply_weight_sharing(model)
+    print("Model Saving")
     model_path = "new_model.pth"
     torch.save(model.state_dict(), model_path)
+
+# for module in model.children():
+#     print(module.weight)
