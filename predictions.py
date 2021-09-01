@@ -10,6 +10,9 @@ if __name__ == '__main__':
     parser.add_argument("-p", "--prune", type=bool, default=False, help="Prune model.")
     parser.add_argument("-s", "--sen", type = float, default = 0, help = "Add sensitivty.")
     parser.add_argument("-o", "--operation", type = str, default = "mean", help ="Operation to prune.")
+    parser.add_argument("-d", "--display", type = bool, default = False, help = "Display.")
+    parser.add_argument("-v", "--video", type = str, default = "sot.mp4", help = "Video.")
+    
     args = parser.parse_args()
     model = models.load_model(
     "config/yolov3.cfg", 
@@ -28,17 +31,18 @@ if __name__ == '__main__':
                 module.weight.data = torch.from_numpy(new_weights)
 
     # Load the image as a numpy array
-    vid = cv2.VideoCapture("sot.mp4")
+    vid = cv2.VideoCapture(args.video)
     while(True):
         try:
             st_time = time.time()
             ret, frame = vid.read()
             boxes = detect.detect_image(model, frame)
-            # print(boxes)
-            cv2.rectangle(frame, (int(boxes[0][0]), int(boxes[0][1])), (int(boxes[0][2]), int(boxes[0][3])), (0,0,0), 2)
-            cv2.imshow("frame", frame)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
+            print(boxes)
+            if args.display == True :
+                cv2.rectangle(frame, (int(boxes[0][0]), int(boxes[0][1])), (int(boxes[0][2]), int(boxes[0][3])), (0,0,0), 2)
+                cv2.imshow("frame", frame)
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    break
             fps = 1/(time.time()-st_time)
             print("FPS: ", fps)
         except AttributeError:
