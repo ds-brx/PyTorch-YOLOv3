@@ -79,6 +79,8 @@ def detect_image(model, image, img_size=416, conf_thres=0.5, nms_thres=0.5):
     :return: Detections on image with each detection in the format: [x1, y1, x2, y2, confidence, class]
     :rtype: nd.array
     """
+    if torch.cuda.is_available():
+      model.cuda()
     model.eval()  # Set model to evaluation mode
 
     # Configure input
