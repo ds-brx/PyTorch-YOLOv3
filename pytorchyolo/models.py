@@ -45,8 +45,8 @@ def create_modules(module_defs, pruning):
             pad = (kernel_size - 1) // 2
             if (pruning==True):
                 conv_mask = Conv_mask(
-                    output_filters[-1],
-                    filters,
+                    in_channels=output_filters[-1],
+                    out_channels=filters,
                     kernel_size=kernel_size,
                     stride=int(module_def["stride"]),
                     padding=pad,
@@ -334,6 +334,7 @@ def load_model(model_path, weights_path=None,pruning=True):
     device = torch.device("cuda" if torch.cuda.is_available()
                           else "cpu")  # Select device for inference
     model = Darknet(model_path,pruning).to(device)
+    print(model)
 
     model.apply(weights_init_normal)
 
@@ -345,4 +346,5 @@ def load_model(model_path, weights_path=None,pruning=True):
         else:
             # Load darknet weights
             model.load_darknet_weights(weights_path)
+    print(model)
     return model
