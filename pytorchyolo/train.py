@@ -98,7 +98,8 @@ def run(model,data="config/coco.data",
     # Create model
     # ############
     if device == "cuda":
-        model= torch.nn.DataParallel(model,device_ids = [0, 3])
+        print("Using parallel training!)
+        model= torch.nn.DataParallel(model)
     model.to(device)
     # Print model
     if verbose:
