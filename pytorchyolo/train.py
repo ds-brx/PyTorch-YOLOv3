@@ -97,15 +97,15 @@ def run(model,data="config/coco.data",
     # ############
     # Create model
     # ############
-  
+    hyperparams = model.hyperparams
     print("Let's use", torch.cuda.device_count(), "GPUs!")
     model= torch.nn.DataParallel(model)
     model.to(device)
     # Print model
     if verbose:
-        summary(model, input_size=(3, model.hyperparams['height'], model.hyperparams['height']))
+        summary(model, input_size=(3, hyperparams['height'], hyperparams['height']))
 
-    mini_batch_size = model.hyperparams['batch'] // model.hyperparams['subdivisions']
+    mini_batch_size = hyperparams['batch'] // hyperparams['subdivisions']
     # #################
     # Create Dataloader
     # #################
@@ -114,7 +114,7 @@ def run(model,data="config/coco.data",
     dataloader = _create_data_loader(
         train_path,
         mini_batch_size,
-        model.hyperparams['height'],
+        hyperparams['height'],
         n_cpu,
         multiscale_training)
 
@@ -122,7 +122,7 @@ def run(model,data="config/coco.data",
     validation_dataloader = _create_validation_data_loader(
         valid_path,
         mini_batch_size,
-        model.hyperparams['height'],
+        hyperparams['height'],
         n_cpu)
 
     # ################
@@ -130,18 +130,18 @@ def run(model,data="config/coco.data",
     # ################
     params = [p for p in model.parameters() if p.requires_grad]
 
-    if (model.hyperparams['optimizer'] in [None, "adam"]):
+    if (hyperparams['optimizer'] in [None, "adam"]):
         optimizer = optim.Adam(
             params,
-            lr=model.hyperparams['learning_rate'],
-            weight_decay=model.hyperparams['decay'],
+            lr=hyperparams['learning_rate'],
+            weight_decay=hyperparams['decay'],
         )
-    elif (model.hyperparams['optimizer'] == "sgd"):
+    elif (hyperparams['optimizer'] == "sgd"):
         optimizer = optim.SGD(
             params,
-            lr=model.hyperparams['learning_rate'],
-            weight_decay=model.hyperparams['decay'],
-            momentum=model.hyperparams['momentum'])
+            lr=hyperparams['learning_rate'],
+            weight_decay=hyperparams['decay'],
+            momentum=hyperparams['momentum'])
     else:
         print("Unknown optimizer. Please choose between (adam, sgd).")
 
@@ -167,16 +167,16 @@ def run(model,data="config/coco.data",
             # Run optimizer
             ###############
 
-            if batches_done % model.hyperparams['subdivisions'] == 0:
+            if batches_done % hyperparams['subdivisions'] == 0:
                 # Adapt learning rate
                 # Get learning rate defined in cfg
-                lr = model.hyperparams['learning_rate']
-                if batches_done < model.hyperparams['burn_in']:
+                lr = hyperparams['learning_rate']
+                if batches_done < hyperparams['burn_in']:
                     # Burn in
-                    lr *= (batches_done / model.hyperparams['burn_in'])
+                    lr *= (batches_done / hyperparams['burn_in'])
                 else:
                     # Set and parse the learning rate to the steps defined in the cfg
-                    for threshold, value in model.hyperparams['lr_steps']:
+                    for threshold, value in hyperparams['lr_steps']:
                         if batches_done > threshold:
                             lr *= value
                 # Log the learning rate
@@ -212,7 +212,7 @@ def run(model,data="config/coco.data",
                 ("train/loss", to_cpu(loss).item())]
             logger.list_of_scalars_summary(tensorboard_log, batches_done)
 
-            model.seen += imgs.size(0)
+            # model.seen += imgs.size(0)
 
         # #############
         # Save progress
@@ -235,7 +235,7 @@ def run(model,data="config/coco.data",
                 model,
                 validation_dataloader,
                 class_names,
-                img_size=model.hyperparams['height'],
+                img_size=hyperparams['height'],
                 iou_thres=iou_thres,
                 conf_thres=conf_thres,
                 nms_thres=nms_thres,
