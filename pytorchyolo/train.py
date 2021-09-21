@@ -93,13 +93,13 @@ def run(model,data="config/coco.data",
     train_path = data_config["train"]
     valid_path = data_config["valid"]
     class_names = load_classes(data_config["names"])
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     # ############
     # Create model
     # ############
-    if device == "cuda":
-        print("Using parallel training!")
-        model= torch.nn.DataParallel(model)
+  
+    print("Let's use", torch.cuda.device_count(), "GPUs!")
+    model= torch.nn.DataParallel(model)
     model.to(device)
     # Print model
     if verbose:
