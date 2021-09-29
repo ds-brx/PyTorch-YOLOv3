@@ -16,19 +16,19 @@ if __name__ == '__main__':
     args = parser.parse_args()
     model = models.load_model(
     "config/yolov3.cfg", 
-    "weights/yolov3.weights",pruning=False)
+    "checkpoints/yolov3_ckpt_299.pth",pruning=True)
 
-    for name, module in model.named_modules():
-            if type(module).__name__ == "Conv2d":
-                weights = module.weight.data.cpu().numpy()
-                if args.operation == "mean":
-                    module_mean = np.mean(weights)
-                    threshold = abs(args.sen * module_mean)
-                else:
-                    module_std = np.std(weights)
-                    threshold = abs(args.sen*module_std)
-                new_weights = np.where(abs(weights) < threshold,0,weights)
-                module.weight.data = torch.from_numpy(new_weights)
+#     for name, module in model.named_modules():
+#             if type(module).__name__ == "Conv2d":
+#                 weights = module.weight.data.cpu().numpy()
+#                 if args.operation == "mean":
+#                     module_mean = np.mean(weights)
+#                     threshold = abs(args.sen * module_mean)
+#                 else:
+#                     module_std = np.std(weights)
+#                     threshold = abs(args.sen*module_std)
+#                 new_weights = np.where(abs(weights) < threshold,0,weights)
+#                 module.weight.data = torch.from_numpy(new_weights)
 
     # Load the image as a numpy array
     vid = cv2.VideoCapture(args.video)
