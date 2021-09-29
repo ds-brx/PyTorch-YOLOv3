@@ -12,7 +12,7 @@ if __name__ == '__main__':
 #     parser.add_argument("-o", "--operation", type = str, default = "mean", help ="Operation to prune.")
     parser.add_argument("-d", "--display", type = bool, default = False, help = "Display.")
     parser.add_argument("-v", "--video", type = str, default = "sot.mp4", help = "Video.")
-    parser.add_argument("m", "--model", type = str, default = "new_model_pruned.pth", help = "Model to prune.")
+    parser.add_argument("-m", "--model", type = str, default = "new_model_pruned.pth", help = "Model to prune.")
 
     args = parser.parse_args()
     model = models.load_model(
