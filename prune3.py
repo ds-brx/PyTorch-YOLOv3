@@ -17,9 +17,10 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = load_model(model,weights_path=checkpoint_path, pruning=True)
 print_nonzeros(model)
 
-model, checkpoint_path = train.run(model=model,pretrained_weights= None)
-print_nonzeros(model)
-test.run(model=model,weights =checkpoint_path)
+# model, checkpoint_path = train.run(model=model,pretrained_weights= None)
+# print_nonzeros(model)
+# test.run(model=model,weights =checkpoint_path)
+print(model)
 
 
 pruneable_layers = []
@@ -30,4 +31,3 @@ for name, module in model.named_modules():
 structured_prune(pruneable_layers,5)
 print_nonzeros(model)
 torch.save(model.state_dict(), "new_model_pruned.pth")
-
