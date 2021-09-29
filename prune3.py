@@ -11,7 +11,7 @@ import argparse
 
 data = "config/coco.data"
 model = "config/yolov3.cfg"
-checkpoint_path = None
+checkpoint_path = "checkpoints/yolov3_ckpt_299.pth"
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = load_model(model,weights_path=checkpoint_path, pruning=True)
