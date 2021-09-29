@@ -29,7 +29,7 @@ def structured_prune(pruneable_layers,prune_rate):
             )
         values = []
         for x in channel_norms:
-            for y in x.data.numpy():
+            for y in x.cpu().data.numpy():
                 values.append(y)
         threshold = np.percentile(values, prune_rate)
         for conv in convs:
