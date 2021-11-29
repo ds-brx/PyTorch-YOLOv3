@@ -98,8 +98,8 @@ def run(model,data="config/coco.data",
     # Create model
     # ############
     hyperparams = model.hyperparams
-    print("Let's use", torch.cuda.device_count(), "GPUs!")
-    model= torch.nn.DataParallel(model)
+#     print("Let's use", torch.cuda.device_count(), "GPUs!")
+#     model= torch.nn.DataParallel(model)
     model.to(device)
     # Print model
     if verbose:
@@ -250,7 +250,7 @@ def run(model,data="config/coco.data",
                     ("validation/mAP", AP.mean()),
                     ("validation/f1", f1.mean())]
                 logger.list_of_scalars_summary(evaluation_metrics, epoch)
-    return model, checkpoint_path
+    return model
 
 
 if __name__ == "__main__":
